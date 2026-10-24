@@ -10,6 +10,7 @@ import {
   Image as ImageIcon,
   Link2,
   ListChecks,
+  Loader2,
   Pencil,
   RotateCcw,
   StickyNote,
@@ -86,6 +87,8 @@ export type InboxCardProps = {
   onMove: (candidate: InboxCandidate, type: InboxCandidateType) => void;
   onZoom: (candidate: InboxCandidate) => void;
   onRestore: (candidate: InboxCandidate) => void;
+  /** Approvazione in corso: evita doppi click mentre si scrive nello storage. */
+  busy?: boolean;
 };
 
 export function InboxCard({
@@ -97,6 +100,7 @@ export function InboxCard({
   onMove,
   onZoom,
   onRestore,
+  busy = false,
 }: InboxCardProps) {
   const reduce = useReducedMotion();
   const [ocrOpen, setOcrOpen] = useState(false);
@@ -135,6 +139,7 @@ export function InboxCard({
         !pending && "saturate-50",
       )}
       aria-label={`Proposta ${INBOX_TYPE_LABEL[candidate.type]}: ${title}`}
+      aria-busy={busy}
     >
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="flex shrink-0 items-start gap-3">
@@ -310,18 +315,28 @@ export function InboxCard({
               size="sm"
               variant="ghost"
               onClick={() => onApprove(candidate)}
+              disabled={busy}
               aria-label={
-                candidate.type === "grade" ? "Rivedi e approva il voto" : "Approva proposta"
+                candidate.type === "grade"
+                  ? "Rivedi e registra il voto"
+                  : candidate.type === "task"
+                    ? "Approva e aggiungi il task alla Bacheca"
+                    : "Approva proposta"
               }
               className="h-8 gap-1.5 px-2.5 text-[#22C55E] hover:bg-[#22C55E]/10 hover:text-[#22C55E]"
             >
-              <Check className="h-4 w-4" aria-hidden="true" />
+              {busy ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Check className="h-4 w-4" aria-hidden="true" />
+              )}
               <span className="hidden sm:inline">Approva</span>
             </Button>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => onEdit(candidate)}
+              disabled={busy}
               aria-label="Modifica proposta"
               className="h-8 gap-1.5 px-2.5"
             >
@@ -333,6 +348,7 @@ export function InboxCard({
                 <Button
                   size="sm"
                   variant="ghost"
+                  disabled={busy}
                   aria-label="Sposta in un'altra categoria"
                   className="h-8 gap-1.5 px-2.5"
                 >
@@ -357,6 +373,7 @@ export function InboxCard({
               size="sm"
               variant="ghost"
               onClick={() => onReject(candidate)}
+              disabled={busy}
               aria-label="Rifiuta proposta"
               className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
             >

@@ -129,6 +129,7 @@ export function InboxEditDialog({
     };
     // Solo i campi mostrati: una data non visibile non va cancellata di nascosto.
     if (candidate.type === "task" || candidate.type === "note") overrides.dueDate = dueDate.trim();
+    if (candidate.type === "grade" && dueDate.trim()) overrides.dueDate = dueDate.trim();
     if (candidate.type === "exam") overrides.examDate = examDate.trim();
     if (candidate.type === "grade") {
       overrides.gradeType = gradeType;
@@ -173,9 +174,13 @@ export function InboxEditDialog({
               />
             </div>
 
-            {(candidate.type === "task" || candidate.type === "note") && (
+            {(candidate.type === "task" ||
+              candidate.type === "note" ||
+              candidate.type === "grade") && (
               <div className="grid gap-2">
-                <Label htmlFor="inbox-due">Scadenza</Label>
+                <Label htmlFor="inbox-due">
+                  {candidate.type === "grade" ? "Data della prova" : "Scadenza"}
+                </Label>
                 <Input
                   id="inbox-due"
                   type="date"
@@ -183,6 +188,11 @@ export function InboxEditDialog({
                   onChange={(event) => setDueDate(event.target.value)}
                   className={FIELD}
                 />
+                {candidate.type === "grade" && (
+                  <span className={HINT}>
+                    Serve al Registro Voti: senza data il voto non viene registrato.
+                  </span>
+                )}
               </div>
             )}
 
@@ -322,6 +332,24 @@ export function InboxGradeReviewDialog({
       setError("La materia è obbligatoria per registrare un voto.");
       return;
     }
+    const [year, month, day] = date.split("-").map(Number);
+    const parsedDate =
+      year === undefined || month === undefined || day === undefined
+        ? null
+        : new Date(year, month - 1, day);
+    const realDate =
+      /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+      year !== undefined &&
+      month !== undefined &&
+      day !== undefined &&
+      parsedDate !== null &&
+      parsedDate.getFullYear() === year &&
+      parsedDate.getMonth() === month - 1 &&
+      parsedDate.getDate() === day;
+    if (!realDate) {
+      setError("Inserisci la data della prova: il Registro Voti la richiede.");
+      return;
+    }
     const weightValue = weight.trim() === "" ? undefined : Number(weight.replace(",", "."));
     if (
       weightValue !== undefined &&
@@ -336,7 +364,7 @@ export function InboxGradeReviewDialog({
       gradeType,
     };
     if (weightValue !== undefined) overrides.weight = weightValue;
-    if (date) overrides.dueDate = date;
+    overrides.dueDate = date;
     onApprove(overrides);
   };
 
@@ -350,8 +378,8 @@ export function InboxGradeReviewDialog({
               Revisione voto
             </DialogTitle>
             <DialogDescription>
-              Controlla i dati letti dallo screenshot. Nessun voto viene registrato: l'approvazione
-              resta locale finché non collegheremo il Registro Voti.
+              Controlla i dati letti dallo screenshot. Confermando, il voto viene scritto nel
+              Registro Voti e la proposta viene archiviata in ~/Tide/Inbox/Processati.
             </DialogDescription>
           </DialogHeader>
 
@@ -414,15 +442,19 @@ export function InboxGradeReviewDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="review-date">Data</Label>
+              <Label htmlFor="review-date">Data della prova</Label>
               <Input
                 id="review-date"
                 type="date"
                 value={date}
                 onChange={(event) => setDate(event.target.value)}
                 className={FIELD}
+                required
               />
-              <span className={HINT}>Facoltativa: lasciala vuota se non era leggibile.</span>
+              <span className={HINT}>
+                Obbligatoria: il Registro Voti salva la data della prova. Se non era leggibile
+                sceglila tu.
+              </span>
             </div>
 
             <div className="rounded-2xl border border-glass-border bg-background/40 p-3">

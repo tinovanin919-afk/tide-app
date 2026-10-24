@@ -1,9 +1,10 @@
 // Stato locale e lettura dei dati per la pagina Inbox AI.
 //
-// `public/inbox-candidates.json` resta di sola lettura: qui vive l'overlay in
-// localStorage (`tide-inbox-ui-state-v1`) che registra le decisioni della UI
-// senza toccare le proposte originali dell'helper. Se lo storage è corrotto o
-// pieno la UI continua a funzionare sui dati del JSON.
+// Il browser legge `public/inbox-candidates.json` ma non lo scrive: l'overlay in
+// localStorage (`tide-inbox-ui-state-v1`) registra modifiche e stati della UI.
+// Dal 2C l'approvazione di voti e compiti passa dalle server function in
+// `inbox-archive.functions.ts`, che archiviano la proposta e spostano il file.
+// Se lo storage è corrotto o pieno la UI continua a funzionare sui dati del JSON.
 
 import {
   parseInboxCandidates,

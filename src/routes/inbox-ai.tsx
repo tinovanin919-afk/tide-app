@@ -21,6 +21,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster } from "@/components/ui/sonner";
+import { cap, tipoOf, useRegistro } from "@/lib/grades";
+import { archiveInboxCandidateFn, restoreInboxCandidateFn } from "@/lib/inbox-archive.functions";
 import type { InboxCandidate, InboxCandidateType } from "@/lib/inbox";
 import {
   INBOX_FILTERS,
@@ -43,6 +45,7 @@ import {
   type InboxOverlayEntry,
   type InboxOverrides,
 } from "@/lib/inbox-ui";
+import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/inbox-ai")({
@@ -68,8 +71,29 @@ const EMPTY_HELPER: InboxHelperStatus = {
 
 const LOAD_ERROR = "Errore lettura inbox-candidates.json. Ricontrolla il formato.";
 
+function isRealIsoDate(value: string | undefined | null): value is string {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  if (year === undefined || month === undefined || day === undefined) return false;
+  const date = new Date(year, month - 1, day);
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+}
+
+/** La Bacheca salva un timestamp: mezzogiorno locale non sposta mai il giorno. */
+function dueTimestamp(iso: string | undefined): number | undefined {
+  if (!isRealIsoDate(iso)) return undefined;
+  const [year, month, day] = iso.split("-").map(Number);
+  if (year === undefined || month === undefined || day === undefined) return undefined;
+  return new Date(year, month - 1, day, 12, 0, 0).getTime();
+}
+
+const newInboxTaskId = () =>
+  `inbox-task-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
 function InboxAiPage() {
   const reduce = useReducedMotion();
+  const { state, dispatch } = useStore();
+  const { reg, addVoti, removeVotiByIds } = useRegistro();
   const [candidates, setCandidates] = useState<InboxCandidate[]>([]);
   const [overlay, setOverlay] = useState<InboxOverlay>({});
   const [helper, setHelper] = useState<InboxHelperStatus>(EMPTY_HELPER);
@@ -83,6 +107,7 @@ function InboxAiPage() {
   const [reviewing, setReviewing] = useState<InboxCandidate | null>(null);
   const [zoomed, setZoomed] = useState<InboxCandidate | null>(null);
   const [helperOpen, setHelperOpen] = useState(false);
+  const [busyIds, setBusyIds] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
   const load = useCallback(async (mode: "initial" | "manual" | "poll") => {
@@ -183,21 +208,183 @@ function InboxAiPage() {
     storeOverlay({ ...previous, [candidate.id]: entry }, previous, message);
   };
 
+  /**
+   * 2C: la decisione viene scritta nello storage reale prima di archiviare la
+   * proposta. Se il JSON non si riesce ad aggiornare, l'inserimento viene
+   * annullato per non lasciare un voto senza la sua proposta archiviata.
+   */
+  const commitApproval = async ({
+    candidate,
+    overrides,
+    createdVoteId,
+    createdTaskId,
+    message,
+  }: {
+    candidate: InboxCandidate;
+    overrides: InboxOverrides;
+    createdVoteId: string | null;
+    createdTaskId: string | null;
+    message: string;
+  }) => {
+    setBusyIds((ids) => (ids.includes(candidate.id) ? ids : [...ids, candidate.id]));
+    try {
+      const result = await archiveInboxCandidateFn({ data: { id: candidate.id } });
+      if (!result.removed) throw new Error(result.warning ?? "Archiviazione non riuscita");
+
+      const current = readInboxOverlay();
+      const next: InboxOverlay = {
+        ...current,
+        [candidate.id]: {
+          ...current[candidate.id],
+          status: "approved",
+          overrides: { ...current[candidate.id]?.overrides, ...overrides },
+          updatedAt: new Date().toISOString(),
+        },
+      };
+      setOverlay(next);
+      if (!writeInboxOverlay(next)) {
+        console.warn("[inbox] overlay non salvato dopo l'approvazione");
+      }
+      setCandidates((list) => list.filter((item) => item.id !== candidate.id));
+
+      toast.success(message, {
+        duration: 6000,
+        action: {
+          label: "Annulla",
+          onClick: () => void undoApproval({ candidate, createdVoteId, createdTaskId }),
+        },
+      });
+      if (result.warning) toast.warning(result.warning, { duration: 7000 });
+    } catch (error) {
+      console.warn("[inbox] approvazione non completata", error);
+      if (createdVoteId) removeVotiByIds([createdVoteId]);
+      if (createdTaskId) dispatch({ type: "removeTask", id: createdTaskId });
+      toast.error(
+        "Approvazione non completata: inbox-candidates.json non è raggiungibile. La proposta resta in attesa.",
+      );
+    } finally {
+      setBusyIds((ids) => ids.filter((id) => id !== candidate.id));
+    }
+  };
+
+  /** Undo: rimette la proposta nel JSON e toglie la voce creata nello storage. */
+  const undoApproval = async ({
+    candidate,
+    createdVoteId,
+    createdTaskId,
+  }: {
+    candidate: InboxCandidate;
+    createdVoteId: string | null;
+    createdTaskId: string | null;
+  }) => {
+    try {
+      const result = await restoreInboxCandidateFn({ data: { candidate } });
+      if (!result.restored) {
+        toast.error(result.warning ?? "Impossibile ripristinare la proposta.");
+        return;
+      }
+      if (createdVoteId) removeVotiByIds([createdVoteId]);
+      if (createdTaskId) dispatch({ type: "removeTask", id: createdTaskId });
+
+      const next = readInboxOverlay();
+      delete next[candidate.id];
+      setOverlay(next);
+      writeInboxOverlay(next);
+      setCandidates((list) =>
+        list.some((item) => item.id === candidate.id) ? list : [candidate, ...list],
+      );
+      toast.success("Approvazione annullata");
+    } catch (error) {
+      console.warn("[inbox] undo non riuscito", error);
+      toast.error("Impossibile annullare: il server locale non risponde.");
+    }
+  };
+
+  const approveTask = async (candidate: InboxCandidate) => {
+    const title = candidate.title?.trim() || candidate.description?.trim() || "Compito dall'Inbox";
+    const subject = candidate.subject?.trim() || "Inbox";
+    const taskId = newInboxTaskId();
+    dispatch({
+      type: "addTask",
+      id: taskId,
+      task: {
+        title,
+        project: subject,
+        subject,
+        priority: "media",
+        status: "in-corso",
+        category: state.category,
+        estimatedBlocks: 2,
+        progress: 0,
+        dueAt: dueTimestamp(candidate.dueDate),
+      },
+    });
+    await commitApproval({
+      candidate,
+      overrides: {},
+      createdVoteId: null,
+      createdTaskId: taskId,
+      message: `Task aggiunto in Bacheca · ${subject}`,
+    });
+  };
+
+  const confirmGrade = async (candidate: InboxCandidate, overrides: InboxOverrides) => {
+    setReviewing(null);
+    const subject = (overrides.subject ?? candidate.subject ?? "").trim();
+    const grade = overrides.grade ?? candidate.grade;
+    const date = overrides.dueDate ?? candidate.dueDate ?? "";
+    const gradeType = overrides.gradeType ?? candidate.gradeType ?? "Scritto";
+    const weight = overrides.weight ?? candidate.weight;
+
+    if (!subject || grade === undefined || !isRealIsoDate(date)) {
+      toast.error("Per registrare il voto servono materia, voto e data validi.");
+      return;
+    }
+
+    const voto = {
+      materia: cap(subject),
+      valore: grade,
+      data: date,
+      tipo: tipoOf(gradeType),
+      ...(weight === undefined ? {} : { peso: weight }),
+    };
+    const duplicate = reg.voti.some(
+      (existing) =>
+        existing.materia.toLocaleLowerCase("it-IT") === voto.materia.toLocaleLowerCase("it-IT") &&
+        existing.valore === voto.valore &&
+        existing.data === voto.data &&
+        existing.tipo === voto.tipo,
+    );
+    // addVoti restituisce subito l'id: serve all'Undo per togliere il voto giusto.
+    const createdVoteId = duplicate ? null : (addVoti([voto])[0] ?? null);
+
+    await commitApproval({
+      candidate,
+      overrides: {
+        ...overrides,
+        subject: voto.materia,
+        grade: voto.valore,
+        gradeType: voto.tipo,
+        dueDate: voto.data,
+      },
+      createdVoteId,
+      createdTaskId: null,
+      message: duplicate
+        ? `Voto già presente nel Registro · ${voto.materia} ${voto.valore}`
+        : `Voto registrato · ${voto.materia} ${voto.valore}`,
+    });
+  };
+
   const approve = (candidate: InboxCandidate) => {
     if (candidate.type === "grade") {
       setReviewing(candidate);
       return;
     }
+    if (candidate.type === "task") {
+      void approveTask(candidate);
+      return;
+    }
     patchCandidate(candidate, { status: "approved" }, "Proposta approvata");
-  };
-
-  const confirmGrade = (candidate: InboxCandidate, overrides: InboxOverrides) => {
-    setReviewing(null);
-    patchCandidate(
-      candidate,
-      { status: "approved", overrides },
-      `Voto${candidate.subject ? ` di ${overrides.subject ?? candidate.subject}` : ""} approvato`,
-    );
   };
 
   const reject = (candidate: InboxCandidate) => {
@@ -473,6 +660,7 @@ function InboxAiPage() {
                 onMove={move}
                 onZoom={setZoomed}
                 onRestore={restore}
+                busy={busyIds.includes(candidate.id)}
               />
             ))}
           </AnimatePresence>
@@ -502,7 +690,7 @@ function InboxAiPage() {
         <InboxGradeReviewDialog
           candidate={reviewing}
           onClose={() => setReviewing(null)}
-          onApprove={(overrides) => confirmGrade(reviewing, overrides)}
+          onApprove={(overrides) => void confirmGrade(reviewing, overrides)}
           onReject={() => reject(reviewing)}
         />
       )}

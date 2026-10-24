@@ -96,7 +96,7 @@ type Action =
   | { type: "removeTodo"; id: string }
   | { type: "toggleMeeting"; id: string }
   | { type: "addMeeting"; title: string; dueAt: number }
-  | { type: "addTask"; task: Omit<Task, "id"> }
+  | { type: "addTask"; task: Omit<Task, "id">; id?: string }
   | { type: "moveTask"; id: string; status: Status }
   | { type: "removeTask"; id: string }
   | { type: "timerStart" }
@@ -173,7 +173,8 @@ export function reducer(s: State, a: Action | StudyAction): State {
     case "addMeeting":
       return { ...s, meetings: [...s.meetings, { id: uid(), title: a.title, dueAt: a.dueAt, time: new Date(a.dueAt).toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }), done: false, category: s.category }] };
     case "addTask":
-      return { ...s, tasks: [...s.tasks, { ...a.task, category: a.task.category ?? s.category, id: uid(), completedAt: a.task.status === "completato" ? Date.now() : undefined }] };
+      // L'id esplicito serve alle azioni che devono poter annullare l'inserimento (Inbox AI).
+      return { ...s, tasks: [...s.tasks, { ...a.task, category: a.task.category ?? s.category, id: a.id ?? uid(), completedAt: a.task.status === "completato" ? Date.now() : undefined }] };
     case "moveTask":
       return {
         ...s,
