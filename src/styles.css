@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", -apple-system, "SF Pro Text", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Sora", ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -38,6 +38,13 @@
   --color-high: var(--high);
   --color-medium: var(--medium);
   --color-low: var(--low);
+  --color-task: var(--task);
+  --color-grade: var(--grade);
+  --color-event: var(--event);
+  --color-note: var(--note);
+  --color-link: var(--link);
+  --color-unknown: var(--unknown);
+  --shadow-accent: var(--shadow-accent);
   --color-ring-2: var(--ring-2);
   --color-ring-3: var(--ring-3);
 }
@@ -71,26 +78,87 @@
   --low: oklch(0.75 0.17 150);
   --ring-2: oklch(0.78 0.13 210);
   --ring-3: oklch(0.82 0.14 95);
-  --wallpaper: radial-gradient(at 20% 10%, oklch(0.35 0.08 230) 0, transparent 50%),
+  --wallpaper:
+    radial-gradient(at 20% 10%, oklch(0.35 0.08 230) 0, transparent 50%),
     radial-gradient(at 80% 80%, oklch(0.3 0.08 190) 0, transparent 50%), oklch(0.14 0.02 240);
 }
 
-[data-accent="rosa"] { --primary: oklch(0.72 0.17 350); }
-[data-accent="rosso"] { --primary: oklch(0.65 0.22 25); }
-[data-accent="arancione"] { --primary: oklch(0.74 0.17 55); }
-[data-accent="verde"] { --primary: oklch(0.75 0.17 150); }
-[data-accent="blu"] { --primary: oklch(0.68 0.16 250); }
+[data-accent="rosa"] {
+  --primary: oklch(0.72 0.17 350);
+}
+[data-accent="rosso"] {
+  --primary: oklch(0.65 0.22 25);
+}
+[data-accent="arancione"] {
+  --primary: oklch(0.74 0.17 55);
+}
+[data-accent="verde"] {
+  --primary: oklch(0.75 0.17 150);
+}
+[data-accent="blu"] {
+  --primary: oklch(0.68 0.16 250);
+}
 
-[data-wallpaper="ash"] { --wallpaper: radial-gradient(at 30% 20%, oklch(0.32 0 0) 0, transparent 55%), oklch(0.15 0 0); }
-[data-wallpaper="sand"] { --wallpaper: radial-gradient(at 20% 10%, oklch(0.42 0.06 70) 0, transparent 50%), radial-gradient(at 90% 90%, oklch(0.3 0.04 50) 0, transparent 50%), oklch(0.17 0.02 60); }
-[data-wallpaper="sage"] { --wallpaper: radial-gradient(at 20% 20%, oklch(0.4 0.06 145) 0, transparent 50%), radial-gradient(at 80% 85%, oklch(0.28 0.04 170) 0, transparent 50%), oklch(0.16 0.02 150); }
-[data-wallpaper="aurora"] { --wallpaper: radial-gradient(at 15% 15%, oklch(0.45 0.14 160) 0, transparent 45%), radial-gradient(at 85% 30%, oklch(0.4 0.15 280) 0, transparent 45%), radial-gradient(at 50% 95%, oklch(0.35 0.12 220) 0, transparent 50%), oklch(0.13 0.03 250); }
-[data-wallpaper="smoke"] { --wallpaper: radial-gradient(at 70% 10%, oklch(0.36 0.02 260) 0, transparent 55%), radial-gradient(at 10% 90%, oklch(0.26 0.01 260) 0, transparent 50%), oklch(0.14 0.01 260); }
-[data-wallpaper="tide"] { --wallpaper: radial-gradient(at 20% 10%, oklch(0.35 0.08 230) 0, transparent 50%), radial-gradient(at 80% 80%, oklch(0.3 0.08 190) 0, transparent 50%), oklch(0.14 0.02 240); }
-[data-wallpaper="bloom"] { --wallpaper: radial-gradient(at 20% 15%, oklch(0.42 0.13 350) 0, transparent 50%), radial-gradient(at 85% 85%, oklch(0.32 0.1 310) 0, transparent 50%), oklch(0.15 0.03 330); }
-[data-wallpaper="ember"] { --wallpaper: radial-gradient(at 25% 15%, oklch(0.45 0.15 40) 0, transparent 45%), radial-gradient(at 80% 90%, oklch(0.3 0.12 20) 0, transparent 50%), oklch(0.14 0.03 30); }
-[data-wallpaper="grove"] { --wallpaper: radial-gradient(at 20% 20%, oklch(0.38 0.1 130) 0, transparent 50%), radial-gradient(at 85% 80%, oklch(0.3 0.08 100) 0, transparent 50%), oklch(0.13 0.03 130); }
-[data-wallpaper="dusk"] { --wallpaper: radial-gradient(at 20% 10%, oklch(0.4 0.12 290) 0, transparent 50%), radial-gradient(at 85% 90%, oklch(0.38 0.12 30) 0, transparent 50%), oklch(0.14 0.03 290); }
+[data-wallpaper="ash"] {
+  --wallpaper: radial-gradient(at 30% 20%, oklch(0.32 0 0) 0, transparent 55%), oklch(0.15 0 0);
+}
+[data-wallpaper="sand"] {
+  --wallpaper:
+    radial-gradient(at 20% 10%, oklch(0.42 0.06 70) 0, transparent 50%),
+    radial-gradient(at 90% 90%, oklch(0.3 0.04 50) 0, transparent 50%), oklch(0.17 0.02 60);
+}
+[data-wallpaper="sage"] {
+  --wallpaper:
+    radial-gradient(at 20% 20%, oklch(0.4 0.06 145) 0, transparent 50%),
+    radial-gradient(at 80% 85%, oklch(0.28 0.04 170) 0, transparent 50%), oklch(0.16 0.02 150);
+}
+[data-wallpaper="aurora"] {
+  --wallpaper:
+    radial-gradient(at 15% 15%, oklch(0.45 0.14 160) 0, transparent 45%),
+    radial-gradient(at 85% 30%, oklch(0.4 0.15 280) 0, transparent 45%),
+    radial-gradient(at 50% 95%, oklch(0.35 0.12 220) 0, transparent 50%), oklch(0.13 0.03 250);
+}
+[data-wallpaper="smoke"] {
+  --wallpaper:
+    radial-gradient(at 70% 10%, oklch(0.36 0.02 260) 0, transparent 55%),
+    radial-gradient(at 10% 90%, oklch(0.26 0.01 260) 0, transparent 50%), oklch(0.14 0.01 260);
+}
+[data-wallpaper="tide"] {
+  --wallpaper:
+    radial-gradient(at 20% 10%, oklch(0.35 0.08 230) 0, transparent 50%),
+    radial-gradient(at 80% 80%, oklch(0.3 0.08 190) 0, transparent 50%), oklch(0.14 0.02 240);
+}
+[data-wallpaper="bloom"] {
+  --wallpaper:
+    radial-gradient(at 20% 15%, oklch(0.42 0.13 350) 0, transparent 50%),
+    radial-gradient(at 85% 85%, oklch(0.32 0.1 310) 0, transparent 50%), oklch(0.15 0.03 330);
+}
+[data-wallpaper="ember"] {
+  --wallpaper:
+    radial-gradient(at 25% 15%, oklch(0.45 0.15 40) 0, transparent 45%),
+    radial-gradient(at 80% 90%, oklch(0.3 0.12 20) 0, transparent 50%), oklch(0.14 0.03 30);
+}
+[data-wallpaper="grove"] {
+  --wallpaper:
+    radial-gradient(at 20% 20%, oklch(0.38 0.1 130) 0, transparent 50%),
+    radial-gradient(at 85% 80%, oklch(0.3 0.08 100) 0, transparent 50%), oklch(0.13 0.03 130);
+}
+[data-wallpaper="dusk"] {
+  --wallpaper:
+    radial-gradient(at 20% 10%, oklch(0.4 0.12 290) 0, transparent 50%),
+    radial-gradient(at 85% 90%, oklch(0.38 0.12 30) 0, transparent 50%), oklch(0.14 0.03 290);
+}
+
+/* Ombra morbida che prende il colore dell'accento attivo */
+:root {
+  --shadow-accent: 0 12px 40px -12px color-mix(in oklab, var(--primary) 45%, transparent);
+  --task: oklch(0.68 0.16 250); /* Blu: Task */
+  --grade: oklch(0.65 0.22 25); /* Rosso: Grade */
+  --event: oklch(0.75 0.17 150); /* Verde: Evento */
+  --note: oklch(0.86 0.16 95); /* Giallo: Nota */
+  --link: oklch(0.72 0.19 305); /* Viola: Link */
+  --unknown: oklch(0.72 0.01 260); /* Grigio: Sconosciuto */
+}
 
 @utility glass {
   background: var(--glass);
@@ -99,7 +167,9 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
   body {
     background: var(--wallpaper);
     background-attachment: fixed;
@@ -108,5 +178,9 @@
     min-height: 100vh;
     transition: background 0.5s ease;
   }
-  h1, h2, h3 { font-family: var(--font-display); }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+  }
 }

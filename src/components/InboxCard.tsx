@@ -30,7 +30,6 @@ import {
 import type { InboxCandidate, InboxCandidateType } from "@/lib/inbox";
 import {
   INBOX_FILTERS,
-  INBOX_TYPE_COLOR,
   INBOX_TYPE_LABEL,
   confidenceTone,
   daysUntil,
@@ -50,6 +49,25 @@ const TYPE_ICON: Record<InboxCandidateType, typeof ListChecks> = {
 };
 
 const MOVE_TARGETS = INBOX_FILTERS.filter((filter) => filter.id !== "all");
+
+// Solo classi: gli hover delle card e i badge seguono la palette Tide.
+const TYPE_STYLE: Record<InboxCandidateType, string> = {
+  task: "hover:border-task/60 hover:shadow-[0_12px_40px_-12px_var(--task)]",
+  grade: "hover:border-grade/60 hover:shadow-[0_12px_40px_-12px_var(--grade)]",
+  exam: "hover:border-event/60 hover:shadow-[0_12px_40px_-12px_var(--event)]",
+  note: "hover:border-note/60 hover:shadow-[0_12px_40px_-12px_var(--note)]",
+  link: "hover:border-link/60 hover:shadow-[0_12px_40px_-12px_var(--link)]",
+  unknown: "hover:border-unknown/60 hover:shadow-[0_12px_40px_-12px_var(--unknown)]",
+};
+
+const BADGE_STYLE: Record<InboxCandidateType, string> = {
+  task: "bg-task/15 text-task ring-1 ring-task/30",
+  grade: "bg-grade/15 text-grade ring-1 ring-grade/30",
+  exam: "bg-event/15 text-event ring-1 ring-event/30",
+  note: "bg-note/15 text-note ring-1 ring-note/30",
+  link: "bg-link/15 text-link ring-1 ring-link/30",
+  unknown: "bg-unknown/15 text-unknown ring-1 ring-unknown/30",
+};
 
 const STATUS_LABEL = {
   approved: "Approvato",
@@ -105,7 +123,6 @@ export function InboxCard({
   const reduce = useReducedMotion();
   const [ocrOpen, setOcrOpen] = useState(false);
   const tone = confidenceTone(candidate.confidence);
-  const color = INBOX_TYPE_COLOR[candidate.type];
   const TypeIcon = TYPE_ICON[candidate.type];
   const pending = candidate.status === "pending";
   const isoDate = primaryDateOf(candidate);
@@ -132,23 +149,25 @@ export function InboxCard({
       layout={!reduce}
       initial={reduce ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: pending ? 1 : 0.6, y: 0 }}
+      {...(reduce ? {} : { whileHover: { y: -4 } })}
       exit={reduce ? { opacity: 1 } : { opacity: 0, scale: 0.98 }}
       transition={{ duration: reduce ? 0 : 0.18, ease: "easeOut" }}
       className={cn(
-        "glass overflow-hidden rounded-3xl p-4 transition-colors sm:p-5",
+        "group relative rounded-2xl border border-glass-border bg-glass p-5 backdrop-blur-md transition-all duration-300 ease-out hover:-translate-y-1 motion-reduce:hover:translate-y-0",
+        TYPE_STYLE[candidate.type],
         !pending && "saturate-50",
       )}
       aria-label={`Proposta ${INBOX_TYPE_LABEL[candidate.type]}: ${title}`}
       aria-busy={busy}
     >
-      <div className="flex flex-col gap-4 sm:flex-row">
+      <div className="flex items-start gap-3">
         <div className="flex shrink-0 items-start gap-3">
           {candidate.thumbnail ? (
             <button
               type="button"
               onClick={() => onZoom(candidate)}
               aria-label="Ingrandisci lo screenshot originale"
-              className="group relative h-20 w-20 overflow-hidden rounded-2xl border border-glass-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-24 sm:w-24"
+              className="group relative h-14 w-14 overflow-hidden rounded-xl border border-glass-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <img
                 src={candidate.thumbnail}
@@ -158,10 +177,10 @@ export function InboxCard({
             </button>
           ) : (
             <div
-              className="grid h-20 w-20 shrink-0 place-items-center rounded-2xl border border-glass-border bg-muted text-muted-foreground sm:h-24 sm:w-24"
+              className="grid h-14 w-14 shrink-0 place-items-center rounded-xl border border-glass-border bg-muted text-muted-foreground"
               aria-hidden="true"
             >
-              <ImageIcon className="h-7 w-7" />
+              <ImageIcon className="h-5 w-5" />
             </div>
           )}
         </div>
@@ -169,8 +188,10 @@ export function InboxCard({
         <div className="min-w-0 flex-1 space-y-2.5">
           <div className="flex flex-wrap items-center gap-2">
             <span
-              className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold"
-              style={{ borderColor: `${color}55`, backgroundColor: `${color}1a`, color }}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wider",
+                BADGE_STYLE[candidate.type],
+              )}
             >
               <TypeIcon className="h-3.5 w-3.5" aria-hidden="true" />
               {INBOX_TYPE_LABEL[candidate.type]}
@@ -208,9 +229,13 @@ export function InboxCard({
 
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="text-base font-semibold leading-snug break-words">{title}</h3>
+              <h3 className="text-[15px] font-semibold leading-snug tracking-tight break-words text-foreground">
+                {title}
+              </h3>
               {description && (
-                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{description}</p>
+                <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                  {description}
+                </p>
               )}
             </div>
             <span
@@ -308,7 +333,7 @@ export function InboxCard({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-end gap-1.5 border-t border-glass-border pt-3">
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-glass-border pt-3 opacity-80 transition-opacity group-hover:opacity-100">
         {pending ? (
           <>
             <Button
@@ -323,14 +348,14 @@ export function InboxCard({
                     ? "Approva e aggiungi il task alla Bacheca"
                     : "Approva proposta"
               }
-              className="h-8 gap-1.5 px-2.5 text-[#22C55E] hover:bg-[#22C55E]/10 hover:text-[#22C55E]"
+              title="Approva"
+              className="h-8 w-8 rounded-xl bg-primary p-0 text-primary-foreground shadow-[0_8px_24px_-12px_var(--primary)] transition hover:bg-primary hover:brightness-110"
             >
               {busy ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
               ) : (
                 <Check className="h-4 w-4" aria-hidden="true" />
               )}
-              <span className="hidden sm:inline">Approva</span>
             </Button>
             <Button
               size="sm"
@@ -338,10 +363,10 @@ export function InboxCard({
               onClick={() => onEdit(candidate)}
               disabled={busy}
               aria-label="Modifica proposta"
-              className="h-8 gap-1.5 px-2.5"
+              title="Modifica"
+              className="h-8 w-8 rounded-xl bg-accent p-0 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
             >
               <Pencil className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Modifica</span>
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -350,10 +375,10 @@ export function InboxCard({
                   variant="ghost"
                   disabled={busy}
                   aria-label="Sposta in un'altra categoria"
-                  className="h-8 gap-1.5 px-2.5"
+                  title="Sposta categoria"
+                  className="h-8 w-8 rounded-xl bg-accent p-0 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
                 >
                   <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
-                  <span className="hidden sm:inline">Sposta</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="glass border-glass-border">
@@ -375,10 +400,10 @@ export function InboxCard({
               onClick={() => onReject(candidate)}
               disabled={busy}
               aria-label="Rifiuta proposta"
-              className="h-8 gap-1.5 px-2.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              title="Rifiuta"
+              className="h-8 w-8 rounded-xl bg-accent p-0 text-xs font-medium text-destructive transition hover:bg-destructive/10 hover:text-destructive"
             >
               <X className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Rifiuta</span>
             </Button>
           </>
         ) : (
@@ -387,10 +412,10 @@ export function InboxCard({
             variant="ghost"
             onClick={() => onRestore(candidate)}
             aria-label="Ripristina proposta"
-            className="h-8 gap-1.5 px-2.5"
+            title="Ripristina"
+            className="h-8 w-8 rounded-xl bg-accent p-0 text-xs font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground"
           >
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
-            Ripristina
           </Button>
         )}
       </div>

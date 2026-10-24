@@ -415,31 +415,33 @@ function InboxAiPage() {
   const allEmpty = merged.length === 0;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto max-w-6xl space-y-5">
       <Toaster position="bottom-right" theme="dark" />
 
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-3xl font-semibold">
-            <InboxIcon className="h-7 w-7 text-primary" aria-hidden="true" />
-            Inbox AI
-          </h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Inbox AI</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Le tue proposte automatiche dall'Inbox locale.
           </p>
         </div>
-        <Button
-          variant="secondary"
-          onClick={() => void load("manual")}
-          disabled={loading || refreshing}
-          aria-label="Aggiorna la lista delle proposte"
-        >
-          <RefreshCw
-            className={cn("h-4 w-4", refreshing && !reduce && "animate-spin")}
-            aria-hidden="true"
-          />
-          Aggiorna lista
-        </Button>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted-foreground">
+            {pending.length} in attesa · {candidates.length} totali
+          </p>
+          <Button
+            variant="secondary"
+            onClick={() => void load("manual")}
+            disabled={loading || refreshing}
+            aria-label="Aggiorna la lista delle proposte"
+          >
+            <RefreshCw
+              className={cn("h-4 w-4", refreshing && !reduce && "animate-spin")}
+              aria-hidden="true"
+            />
+            Aggiorna lista
+          </Button>
+        </div>
       </header>
 
       <section
@@ -564,7 +566,11 @@ function InboxAiPage() {
       </div>
 
       {loading ? (
-        <div className="space-y-3" aria-busy="true" aria-label="Caricamento proposte">
+        <div
+          className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+          aria-busy="true"
+          aria-label="Caricamento proposte"
+        >
           {[0, 1].map((index) => (
             <div key={index} className="glass rounded-3xl p-5">
               <div className="flex gap-4">
@@ -580,7 +586,7 @@ function InboxAiPage() {
           ))}
         </div>
       ) : error && merged.length === 0 ? (
-        <div className="glass grid place-items-center rounded-3xl px-6 py-14 text-center">
+        <div className="grid place-items-center rounded-2xl border border-dashed border-glass-border bg-glass/50 px-6 py-12 text-center backdrop-blur-md">
           <AlertTriangle className="mb-3 h-10 w-10 text-destructive" aria-hidden="true" />
           <p className="text-base font-medium">Impossibile leggere le proposte</p>
           <p className="mt-1 max-w-md text-sm text-muted-foreground">
@@ -600,7 +606,7 @@ function InboxAiPage() {
           </Button>
         </div>
       ) : allEmpty ? (
-        <div className="glass grid place-items-center rounded-3xl px-6 py-16 text-center">
+        <div className="grid place-items-center rounded-2xl border border-dashed border-glass-border bg-glass/50 px-6 py-12 text-center backdrop-blur-md">
           <div className="relative mb-5 grid h-20 w-20 place-items-center rounded-3xl bg-primary/15 text-primary">
             <InboxIcon className="h-10 w-10" aria-hidden="true" />
             <span className="absolute -bottom-2 -right-2 grid h-8 w-8 place-items-center rounded-full bg-background text-primary shadow-lg">
@@ -635,7 +641,7 @@ function InboxAiPage() {
           )}
         </div>
       ) : visible.length === 0 ? (
-        <div className="glass grid place-items-center rounded-3xl px-6 py-14 text-center">
+        <div className="grid place-items-center rounded-2xl border border-dashed border-glass-border bg-glass/50 px-6 py-12 text-center backdrop-blur-md">
           <InboxIcon className="mb-3 h-10 w-10 text-muted-foreground" aria-hidden="true" />
           <p className="text-sm text-muted-foreground">
             {filter === "all"
@@ -647,7 +653,7 @@ function InboxAiPage() {
           </Button>
         </div>
       ) : (
-        <motion.div layout={!reduce} className="space-y-3">
+        <motion.div layout={!reduce} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <AnimatePresence initial={false} mode="popLayout">
             {visible.map((candidate) => (
               <InboxCard
