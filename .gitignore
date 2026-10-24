@@ -16,9 +16,11 @@ dist-ssr
 .nitro
 *.local
 
-# Inbox AI: proposte locali generate dal watcher (dati personali, non versionati)
+# Inbox AI: proposte e stato del watcher (dati locali, non versionati)
 public/inbox-candidates.json
 public/inbox-candidates.json.*.tmp
+public/inbox-status.json
+public/inbox-status.json.*.tmp
 
 # Wrangler / Cloudflare
 .wrangler/

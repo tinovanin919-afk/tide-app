@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalisiRouteImport } from './routes/analisi'
 import { Route as BachecaRouteImport } from './routes/bacheca'
 import { Route as ImpostazioniRouteImport } from './routes/impostazioni'
+import { Route as InboxAiRouteImport } from './routes/inbox-ai'
 import { Route as VotiRouteImport } from './routes/voti'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,6 +36,11 @@ const ImpostazioniRoute = ImpostazioniRouteImport.update({
   path: '/impostazioni',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InboxAiRoute = InboxAiRouteImport.update({
+  id: '/inbox-ai',
+  path: '/inbox-ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VotiRoute = VotiRouteImport.update({
   id: '/voti',
   path: '/voti',
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/analisi': typeof AnalisiRoute
   '/bacheca': typeof BachecaRoute
   '/impostazioni': typeof ImpostazioniRoute
+  '/inbox-ai': typeof InboxAiRoute
   '/voti': typeof VotiRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/analisi': typeof AnalisiRoute
   '/bacheca': typeof BachecaRoute
   '/impostazioni': typeof ImpostazioniRoute
+  '/inbox-ai': typeof InboxAiRoute
   '/voti': typeof VotiRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,23 @@ export interface FileRoutesById {
   '/analisi': typeof AnalisiRoute
   '/bacheca': typeof BachecaRoute
   '/impostazioni': typeof ImpostazioniRoute
+  '/inbox-ai': typeof InboxAiRoute
   '/voti': typeof VotiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/analisi' | '/bacheca' | '/impostazioni' | '/voti'
+  fullPaths:
+    '/' | '/analisi' | '/bacheca' | '/impostazioni' | '/inbox-ai' | '/voti'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/analisi' | '/bacheca' | '/impostazioni' | '/voti'
-  id: '__root__' | '/' | '/analisi' | '/bacheca' | '/impostazioni' | '/voti'
+  to: '/' | '/analisi' | '/bacheca' | '/impostazioni' | '/inbox-ai' | '/voti'
+  id:
+    | '__root__'
+    | '/'
+    | '/analisi'
+    | '/bacheca'
+    | '/impostazioni'
+    | '/inbox-ai'
+    | '/voti'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +93,7 @@ export interface RootRouteChildren {
   AnalisiRoute: typeof AnalisiRoute
   BachecaRoute: typeof BachecaRoute
   ImpostazioniRoute: typeof ImpostazioniRoute
+  InboxAiRoute: typeof InboxAiRoute
   VotiRoute: typeof VotiRoute
 }
 
@@ -109,6 +127,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ImpostazioniRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/inbox-ai': {
+      id: '/inbox-ai'
+      path: '/inbox-ai'
+      fullPath: '/inbox-ai'
+      preLoaderRoute: typeof InboxAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/voti': {
       id: '/voti'
       path: '/voti'
@@ -124,6 +149,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalisiRoute: AnalisiRoute,
   BachecaRoute: BachecaRoute,
   ImpostazioniRoute: ImpostazioniRoute,
+  InboxAiRoute: InboxAiRoute,
   VotiRoute: VotiRoute,
 }
 export const routeTree = rootRouteImport

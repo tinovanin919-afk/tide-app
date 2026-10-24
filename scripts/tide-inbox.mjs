@@ -114,6 +114,35 @@ async function main() {
   }
   process.on("exit", releaseLock);
 
+  // Stato leggibile dalla dashboard (`public/inbox-status.json`): è solo informativo,
+  // quindi un errore di scrittura non deve mai fermare il watcher.
+  const statusPath = path.join(path.dirname(outputPath), "inbox-status.json");
+  const writeStatus = (helperActive, note) => {
+    try {
+      fs.mkdirSync(path.dirname(statusPath), { recursive: true });
+      const tmp = `${statusPath}.${process.pid}.tmp`;
+      fs.writeFileSync(
+        tmp,
+        `${JSON.stringify({
+          helperActive,
+          updatedAt: new Date().toISOString(),
+          pid: helperActive ? process.pid : null,
+          note,
+        })}\n`,
+      );
+      fs.renameSync(tmp, statusPath);
+    } catch {
+      // Stato puramente informativo: si ignora.
+    }
+  };
+  writeStatus(true, "watcher attivo");
+  const heartbeat = setInterval(() => writeStatus(true, "watcher attivo"), 60_000);
+  heartbeat.unref?.();
+  process.on("exit", () => {
+    clearInterval(heartbeat);
+    writeStatus(false, "watcher non attivo");
+  });
+
   logger.info("─".repeat(60));
   logger.info(`Tide Inbox: ${root}`);
   logger.info(`Proposte: ${outputPath}`);

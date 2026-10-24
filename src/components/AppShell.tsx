@@ -1,5 +1,14 @@
 import { Link } from "@tanstack/react-router";
-import { BarChart3, GraduationCap, KanbanSquare, LayoutDashboard, Settings, Timer, Waves } from "lucide-react";
+import {
+  BarChart3,
+  GraduationCap,
+  Inbox,
+  KanbanSquare,
+  LayoutDashboard,
+  Settings,
+  Timer,
+  Waves,
+} from "lucide-react";
 import { useEffect, type ReactNode } from "react";
 import { LocalReminders } from "@/components/LocalReminders";
 import { fmt, remainingOf, useNow, useStore } from "@/lib/store";
@@ -8,6 +17,7 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/bacheca", label: "Bacheca", icon: KanbanSquare },
   { to: "/analisi", label: "Analisi", icon: BarChart3 },
+  { to: "/inbox-ai", label: "Inbox AI", icon: Inbox },
   { to: "/voti", label: "Registro Voti", icon: GraduationCap },
   { to: "/impostazioni", label: "Impostazioni", icon: Settings },
 ] as const;
@@ -56,7 +66,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-export function Card({ title, action, children, className = "" }: { title?: string; action?: ReactNode; children: ReactNode; className?: string }) {
+export function Card({
+  title,
+  action,
+  children,
+  className = "",
+}: {
+  title?: string;
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <section className={`glass rounded-3xl p-5 ${className}`}>
       {title && (
